@@ -7,6 +7,7 @@ from config.settings import (
     DIRECT_TOPIC,  # MQTT topic for direct messages
     LWT_MESSAGE,  # Last Will and Testament message
     OFFLINE_MESSAGE,  # Offline message
+    ONLINE_MESSAGE,  # Online message
     DEVICE_ID,  # Unique device identifier
 )
 
@@ -23,7 +24,7 @@ class MQTTSubscriber:
     def on_connect(self, client, userdata, flags, rc):
         if rc == 0:
             print("Connected successfully.")
-            client.publish(STATUS_TOPIC, f"{DEVICE_ID}: online", retain=True)
+            client.publish(STATUS_TOPIC, f"{ONLINE_MESSAGE}", qos=1, retain=True)
             client.subscribe([(DIRECT_TOPIC, 0)])
         else:
             print(f"Connected with result code {rc}")
@@ -35,10 +36,6 @@ class MQTTSubscriber:
             payload  # Update the messages dictionary with the new message
         )
 
-        # Example command parsing for 'set_position'
-        if msg.topic == DIRECT_TOPIC and payload.startswith("set_position"):
-            set_position(client, payload)  # Call the function with the payload
-
     def on_disconnect(self, client, userdata, rc):
         if rc != 0:
             print("Unexpected disconnection.")
@@ -49,6 +46,6 @@ class MQTTSubscriber:
             self.client.loop_start()
             input("Press Enter to disconnect...\n")
         finally:
-            self.client.publish(STATUS_TOPIC, OFFLINE_MESSAGE, retain=True)
+            self.client.publish(STATUS_TOPIC, OFFLINE_MESSAGE, qos=1, retain=True)
             self.client.disconnect()
             self.client.loop_stop()

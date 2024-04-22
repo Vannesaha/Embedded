@@ -1,5 +1,5 @@
 # Configuration settings for MQTT Broker
-BROKER = "localhost"  # broker address
+BROKER = "192.168.1.110"  # broker address
 PORT = 1883
 DEVICE_ID = "embedded"
 

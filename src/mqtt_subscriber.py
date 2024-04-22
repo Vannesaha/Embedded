@@ -23,7 +23,7 @@ class MQTTSubscriber:
 
     def on_connect(self, client, userdata, flags, rc):
         if rc == 0:
-            print("Connected successfully.")
+            print(f"Connected successfully to broker: {BROKER}.")
             client.publish(STATUS_TOPIC, f"{ONLINE_MESSAGE}", qos=1, retain=True)
             client.subscribe([(DIRECT_TOPIC, 0)])
         else:

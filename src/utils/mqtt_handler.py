@@ -6,6 +6,8 @@ import logging
 
 from src.embedded.blade import EmbeddedDevice
 from src.embedded.blade_guard import BladeGuard
+from src.utils.status import Status
+
 from config.settings import (
     BROKER,  # MQTT broker address
     PORT,  # MQTT broker port
@@ -18,11 +20,11 @@ from config.settings import (
 )
 
 # List of topics to subscribe to
-topics = [
-    "home/control/emb/status",
-    "home/control/emb/blade",
-    "home/control/emb/blade_guard/move",
-]
+# topics = [
+#     "home/control/emb/status",
+#     "home/control/emb/blade",
+#     "home/control/emb/blade_guard/move",
+# ]
 
 
 class MQTTHandler:
@@ -38,14 +40,22 @@ class MQTTHandler:
             self.on_disconnect
         )  # Set the on_disconnect callback function
 
+        # keep track of the online status of the device
+        self.is_online = "offline"
+
         self.embedded = EmbeddedDevice(self)  # Initialize the embedded device
         self.blade_guard = BladeGuard(self)  # Initialize the embedded device
+        self.status = Status(self)  # Initialize the status
 
         self.messages = {}  # Initialize the messages dictionary
-        self.subscribe(topics)  # Subscribe to the topics
+        # self.subscribe(topics)  # Subscribe to the topics
 
-        # keep track of the online status of the device
-        self.is_online = False
+        self.topic_handlers = {
+            "home/control/emb/status": self.status.handle_mqtt_message,
+            "home/control/emb/blade": self.embedded.handle_mqtt_message,
+            "home/control/emb/blade_guard/move": self.blade_guard.handle_mqtt_message,
+            # Add more topics here...
+        }
 
     def subscribe(self, topics):
         for topic in topics:
@@ -58,51 +68,26 @@ class MQTTHandler:
             print(f"Connected successfully to broker: {BROKER}.")
             # print(f"Connected with result code {rc}")
 
-            self.is_online = True  # set the online status to True
+            self.is_online = "online"  # set the online status to True
 
             # Publish an online message when connected
             client.publish("home/status/emb", "online", qos=1, retain=True)
-            self.subscribe(topics)  # Subscribe to the topics in the topics list
-
-            # client.subscribe([(DIRECT_TOPIC, 0)])  # Subscribe to the direct topic
-
-            # # example for subscribing to conrol topic for emb status
-            # client.subscribe("home/control/emb/status")
-
-            # # example for subscribing to conrol topic for emb blade
-            # client.subscribe("home/control/emb/blade")
+            self.subscribe(
+                self.topic_handlers.keys()
+            )  # Subscribe to the topics in the topic_handlers list
 
     # function to handle the on_message event
     def on_message(self, client, userdata, msg):
-        # print(f"Received on {msg.topic}: {msg.payload.decode()}")
         payload = msg.payload.decode()  # Decode the message payload
         self.messages[msg.topic] = (
             payload  # Update the messages dictionary with the new message
         )
-        # check if the message is a control message for emb status (can be empty message)
-        if msg.topic == "home/control/emb/status":
-            status_message = "online" if self.is_online else "offline"
-            # publish the status message if the device is online
-            client.publish("home/status/emb", status_message)
-            print(f"Status message published: {status_message}")
 
-        # check if the message is a control message for emb blade
-        if msg.topic == "home/control/emb/blade":
-            if payload == "ON":
-                self.embedded.start_blade()
-            elif payload == "OFF":
-                self.embedded.stop_blade()
-            else:
-                print("Invalid command")
-
-        # check if the message is a control message for bleade guard
-        if msg.topic == "home/control/emb/blade_guard/move":
-            if payload == "ON":
-                self.blade_guard.start_blade_guard()
-            elif payload == "OFF":
-                self.blade_guard.stop_blade_guard()
-            else:
-                print("Invalid command")
+        handler = self.topic_handlers.get(msg.topic)
+        if handler:
+            handler(client, payload)
+        else:
+            print(f"No handler for topic {msg.topic}")
 
     def on_disconnect(self, client, userdata, rc):
         if rc != 0:

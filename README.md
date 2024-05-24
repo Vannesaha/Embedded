@@ -35,3 +35,7 @@ This application uses MQTT for communication. You can use the `mosquitto_sub` an
    ```
 
 Remember to replace `localhost` with the address of your MQTT broker if it's not running on your local machine.
+
+mosquitto_sub -h localhost -t home/status/emb/blade_guard
+mosquitto_sub -h localhost -t home/control/emb/blade_guard
+mosquitto_pub -h localhost -p 1883 -t home/control/emb/blade_guard/move -m "RIGH"

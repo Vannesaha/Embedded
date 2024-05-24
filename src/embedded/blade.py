@@ -8,6 +8,14 @@ class EmbeddedDevice:
         self.mqtt_handler = mqtt_handler  # Initialize the MQTT handler
         self.blade_status = "off"  # Initialize the blade status to off
 
+    def handle_mqtt_message(self, client, payload):
+        if payload == "ON":
+            self.start_blade()
+        elif payload == "OFF":
+            self.stop_blade()
+        else:
+            print("Invalid command")
+
     def start_blade(self):
         if self.blade_status == "off":  # Check if the blade is off
             self.blade_status = "on"

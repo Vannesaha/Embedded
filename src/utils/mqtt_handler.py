@@ -14,7 +14,7 @@ from config.settings import (
 )
 
 
-class MQTTSubscriber:
+class MQTTHandler:
     def __init__(self):
         self.client = mqtt.Client(
             client_id=DEVICE_ID

@@ -1,16 +1,9 @@
-# Import the MQTTSubscriber class from src.mqtt_client module
-from src.mqtt_subscriber import MQTTSubscriber
+# main.py
 
+from maincontroller import MainController
 
-# Define the main function
-def main():
-    # Create an instance of MQTTSubscriber
-    subscriber = MQTTSubscriber()
-    # Run the MQTT subscriber
-    subscriber.run()
+# Create a MainController
+main_controller = MainController()
 
-
-# Check if the script is being run directly
-if __name__ == "__main__":
-    # Call the main function
-    main()
+# Start the MainController
+main_controller.start()

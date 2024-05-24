@@ -16,7 +16,7 @@ This application uses MQTT for communication. You can use the `mosquitto_sub` an
    mosquitto_pub -h localhost -p 1883 -t home/control/emb/status -m ""
    ```
 
-   The application will respond to control messages by publishing a status message. To see these responses, you can subscribe to the `home/status/emb/` topic:
+   The application will respond to control messages by publishing a status message. To see these responses, you can subscribe to the `home/status/emb` topic:
 
    ```bash
    mosquitto_sub -h localhost -t home/status/emb

@@ -1,24 +1,28 @@
+# MQTT handler class to handle the MQTT connection and messages
+
 import paho.mqtt.client as mqtt
 import socket
+import logging
 
-
+from src.embedded.embedded import EmbeddedDevice
 from config.settings import (
     BROKER,  # MQTT broker address
     PORT,  # MQTT broker port
-    STATUS_TOPIC,  # MQTT topic for status messages
-    DIRECT_TOPIC,  # MQTT topic for direct messages
+    # STATUS_TOPIC,  # MQTT topic for status messages
+    # DIRECT_TOPIC,  # MQTT topic for direct messages
     LWT_MESSAGE,  # Last Will and Testament message
-    OFFLINE_MESSAGE,  # Offline message
-    ONLINE_MESSAGE,  # Online message
+    # OFFLINE_MESSAGE,  # Offline message
+    # ONLINE_MESSAGE,  # Online message
     DEVICE_ID,  # Unique device identifier
 )
+
+topics = ["home/control/emb/status", "home/control/emb/blade"]
 
 
 class MQTTHandler:
     def __init__(self):
-        self.client = mqtt.Client(
-            client_id=DEVICE_ID
-        )  # Create a new MQTT client instance
+        self.client = mqtt.Client(client_id=DEVICE_ID)
+
         self.client.will_set(
             "home/status/emb", payload=LWT_MESSAGE, qos=1, retain=True
         )  # Set the last will and testament message
@@ -27,10 +31,18 @@ class MQTTHandler:
         self.client.on_disconnect = (
             self.on_disconnect
         )  # Set the on_disconnect callback function
+
+        self.embedded = EmbeddedDevice(self)  # Initialize the embedded device
         self.messages = {}  # Initialize the messages dictionary
+        self.subscribe(topics)  # Subscribe to the topics
 
         # keep track of the online status of the device
         self.is_online = False
+
+    def subscribe(self, topics):
+        for topic in topics:
+            self.client.subscribe(topic)
+            logging.info(f"Subscribed to {topic}")
 
     # function to handle the on_connect event
     def on_connect(self, client, userdata, flags, rc):
@@ -42,10 +54,15 @@ class MQTTHandler:
 
             # Publish an online message when connected
             client.publish("home/status/emb", "online", qos=1, retain=True)
+            self.subscribe(topics)  # Subscribe to the topics in the topics list
+
             # client.subscribe([(DIRECT_TOPIC, 0)])  # Subscribe to the direct topic
 
-            # example for subscribing to conrol topic for emb status
-            client.subscribe("home/control/emb/status")
+            # # example for subscribing to conrol topic for emb status
+            # client.subscribe("home/control/emb/status")
+
+            # # example for subscribing to conrol topic for emb blade
+            # client.subscribe("home/control/emb/blade")
 
     # function to handle the on_message event
     def on_message(self, client, userdata, msg):
@@ -59,6 +76,15 @@ class MQTTHandler:
             status_message = "online" if self.is_online else "offline"
             # publish the status message if the device is online
             client.publish("home/status/emb", status_message)
+
+        # check if the message is a control message for emb blade
+        if msg.topic == "home/control/emb/blade":
+            if payload == "ON":
+                self.embedded.start_blade()
+            elif payload == "OFF":
+                self.embedded.stop_blade()
+            else:
+                print("Invalid command")
 
     def on_disconnect(self, client, userdata, rc):
         if rc != 0:

@@ -34,8 +34,20 @@ This application uses MQTT for communication. You can use the `mosquitto_sub` an
    mosquitto_pub -h localhost -p 1883 -t home/control/emb/blade -m "ON"
    ```
 
-Remember to replace `localhost` with the address of your MQTT broker if it's not running on your local machine.
+   Other commands "ON", "OFF"
 
-mosquitto_sub -h localhost -t home/status/emb/blade_guard
-mosquitto_sub -h localhost -t home/control/emb/blade_guard
-mosquitto_pub -h localhost -p 1883 -t home/control/emb/blade_guard/move -m "RIGH"
+5. **Blade Guard Status Messages:** The application publishes blade guard status messages to the `home/status/emb/blade_guard` topic. To see these messages, subscribe to this topic using the following command:
+
+   ```bash
+   mosquitto_sub -h localhost -t home/status/emb/blade_guard
+   ```
+
+6. **Blade Guard Control Messages:** The application listens for blade guard control messages on the `home/control/emb/blade_guard` topic. To send a blade guard control message, you can use the `mosquitto_pub` command. For example, to move the blade guard to the right, use the following command:
+
+   ```bash
+   mosquitto_pub -h localhost -p 1883 -t home/control/emb/blade_guard/move -m "RIGH"
+   ```
+
+   Other commands "RIGHT", "LEFT", "ON", "OFF"
+
+Remember to replace `localhost` with the address of your MQTT broker if it's not running on your local machine.
